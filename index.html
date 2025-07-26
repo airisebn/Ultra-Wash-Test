@@ -67,6 +67,7 @@
     }
 
     input[type="text"],
+    input[type="date"],
     textarea,
     select {
       width: 100%;
@@ -124,6 +125,30 @@
       font-size: 13px;
     }
 
+    .delivery-note {
+      font-size: 13px;
+      color: var(--color-label);
+      margin-top: -4px;
+      margin-bottom: 16px;
+      background-color: #fff8e1;
+      padding: 8px;
+      border-left: 4px solid #ff6d5a;
+      border-radius: var(--radius);
+      display: none;
+    }
+
+    .pickup-note {
+      font-size: 12px;
+      color: #b45309;
+      margin-top: -12px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .spacer {
+      height: 8px;
+    }
+
     button[type="submit"] {
       background-color: var(--color-btn-bg);
       color: var(--color-btn-text);
@@ -143,7 +168,7 @@
 </head>
 <body>
 
-<form id="customerForm" method="POST" action="https://risetotop.app.n8n.cloud/webhook/walk-in-form" novalidate>
+<form id="customerForm" method="POST" action="https://risetotop.app.n8n.cloud/webhook-test/ultrawash-test" novalidate>
   <h1>Ultra Wash Customer Form</h1>
 
   <label for="name">Name</label>
@@ -156,13 +181,28 @@
   <select id="service" name="service" required>
     <option value="" disabled selected>Select service</option>
     <option value="Self Drop-off & Pick-up">Self Drop-off & Pick-up</option>
-    <option value="Delivery">Delivery</option>
+    <option value="Pick Up Only">Pick Up Only</option>
+    <option value="Delivery Only">Delivery Only</option>
+    <option value="Pick Up & Delivery">Pick Up & Delivery</option>
   </select>
 
   <div id="addressSection" style="display:none;">
     <label for="address">Address</label>
-    <div class="description">Please send your pinned location separately on WhatsApp for precise delivery.</div>
+    <div class="description" id="addressDescription">
+      Please send your pinned location separately on WhatsApp.
+    </div>
     <textarea id="address" name="address" placeholder="Enter your address" rows="3"></textarea>
+  </div>
+
+  <div id="pickupDateSection" style="display:none;">
+    <label for="pickupDate">Pick Up Date</label>
+    <input type="date" id="pickupDate" name="pickupDate" />
+    <div class="pickup-note" id="pickupNote">📅 Pick up only available on Monday and Thursday.</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div id="deliveryNote" class="delivery-note">
+    🕓 Please note that delivery will be made 1–2 days after pickup is completed.
   </div>
 
   <div class="terms-header" onclick="toggleTerms()">📄 Terms and Conditions (click to expand)</div>
@@ -202,28 +242,70 @@ We may outsource cleaning services without notice.
     terms.style.display = terms.style.display === 'block' ? 'none' : 'block';
   }
 
-  // Show/hide address based on service selection
   document.getElementById('service').addEventListener('change', function () {
+    const selectedService = this.value;
     const addressSection = document.getElementById('addressSection');
-    if (this.value === 'Delivery') {
+    const addressDescription = document.getElementById('addressDescription');
+    const deliveryNote = document.getElementById('deliveryNote');
+    const pickupDateSection = document.getElementById('pickupDateSection');
+    const pickupNote = document.getElementById('pickupNote');
+
+    // Reset all
+    addressSection.style.display = 'none';
+    deliveryNote.style.display = 'none';
+    pickupDateSection.style.display = 'none';
+    pickupNote.style.display = 'none';
+
+    document.getElementById('address').required = false;
+    document.getElementById('pickupDate').required = false;
+    document.getElementById('address').value = '';
+    document.getElementById('pickupDate').value = '';
+
+    if (selectedService === 'Pick Up & Delivery') {
       addressSection.style.display = 'block';
-      document.getElementById('address').setAttribute('required', 'required');
-    } else {
-      addressSection.style.display = 'none';
-      document.getElementById('address').removeAttribute('required');
-      document.getElementById('address').value = '';
+      addressDescription.textContent = 'Please send your pinned location separately on WhatsApp for precise pickup and delivery.';
+      deliveryNote.style.display = 'block';
+      pickupDateSection.style.display = 'block';
+      pickupNote.style.display = 'block';
+      document.getElementById('address').required = true;
+      document.getElementById('pickupDate').required = true;
+    } else if (selectedService === 'Delivery Only') {
+      addressSection.style.display = 'block';
+      addressDescription.textContent = 'Please send your pinned location separately on WhatsApp for precise delivery.';
+      deliveryNote.style.display = 'block';
+      // no pickup date for delivery only
+      document.getElementById('address').required = true;
+    } else if (selectedService === 'Pick Up Only') {
+      addressSection.style.display = 'block';
+      addressDescription.textContent = 'Please send your pinned location separately on WhatsApp for pickup.';
+      pickupDateSection.style.display = 'block';
+      pickupNote.style.display = 'block';
+      document.getElementById('address').required = true;
+      document.getElementById('pickupDate').required = true;
     }
   });
 
-  // Validate form before submit
   document.getElementById('customerForm').addEventListener('submit', function (e) {
     if (!this.checkValidity()) {
       e.preventDefault();
       alert('Please complete all required fields and agree to the Terms & Conditions.');
+      return;
+    }
+
+    const service = document.getElementById('service').value;
+    const pickupDate = document.getElementById('pickupDate').value;
+
+    if ((service === 'Pick Up Only' || service === 'Pick Up & Delivery') && pickupDate) {
+      const selectedDate = new Date(pickupDate);
+      const day = selectedDate.getDay(); // Sunday=0, Monday=1,...Thursday=4
+
+      if (day !== 1 && day !== 4) {
+        e.preventDefault();
+        alert('🚫 Pick up is only available on Monday and Thursday. Please choose a valid date.');
+      }
     }
   });
 </script>
 
 </body>
 </html>
-
