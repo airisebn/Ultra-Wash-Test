@@ -228,7 +228,7 @@
 </head>
 <body>
 
-<form id="customerForm" method="POST" action="https://risetotop.app.n8n.cloud/webhook-test/ultrawash-test" novalidate>
+<form id="customerForm" method="POST" action="https://risetotop.app.n8n.cloud/webhook-test/ultrawash-form" novalidate>
   <h1>Ultra Wash Customer Form</h1>
 
   <label for="name">Name</label>
@@ -267,7 +267,7 @@
     <label for="pickupDate">Pick Up Date</label>
     <input type="date" id="pickupDate" name="pickupDate" />
     <div class="pickup-note" id="pickupNote">
-      <span style="font-style: normal;">📅</span> <em>Pick up only available on Monday and Thursday.</em>
+      <span style="font-style: normal;">📅</span> <em>Pick up available from Monday to Saturday.</em>
     </div>
   </div>
 
@@ -433,8 +433,8 @@ We may outsource cleaning services without notice.
       const selectedDate = new Date(pickupDate);
       const day = selectedDate.getDay(); // Sunday=0, Monday=1,...Thursday=4
 
-      if (day !== 1 && day !== 4) {
-        alert('🚫 Pick up is only available on Monday and Thursday. Please choose a valid date.');
+      if (day === 0) {
+        alert('🚫 Pick up is only available from Monday to Saturday. Please choose a valid date.');
         return;
       }
     }
